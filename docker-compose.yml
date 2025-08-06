@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: streaming-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./streams:/var/www/html/streams
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - streaming-server
+    restart: unless-stopped
+
+  streaming-server:
+    build: .
+    container_name: streaming-server
+    ports:
+      - "1935:1935"
+      - "3001:3001"
+      - "8080:8080"
+    volumes:
+      - ./streams:/app/streams
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - RTMP_PORT=1935
+      - API_PORT=3001
+      - WS_PORT=8080
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: streaming-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
